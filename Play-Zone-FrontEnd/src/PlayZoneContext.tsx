@@ -205,7 +205,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     try {
       const sessionRes = await api.get('/sessions/active');
       const activeSessions: any[] = sessionRes.data || [];
-      console.log('[acceptAndAddToInvoice] active sessions:', activeSessions.length);
+      console.log('[acceptAndAddToInvoice] active sessions:', activeSessions.length, 'data:', activeSessions);
       const session = activeSessions.find((s: any) => s.deviceId === req.deviceId);
       console.log('[acceptAndAddToInvoice] found session:', session?.id, 'for deviceId:', req.deviceId);
       if (session) {
@@ -213,43 +213,35 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
           try {
             const res = await api.post(`/sessions/${session.id}/add-order`, order);
             console.log('[acceptAndAddToInvoice] add-order success:', res.status);
-          } catch (e) {
-            console.error('[acceptAndAddToInvoice] add-order error:', e);
+          } catch (e: any) {
+            console.error('[acceptAndAddToInvoice] add-order error:', e.response?.status, e.response?.data, e.message);
           }
         }
       } else {
         console.log('[acceptAndAddToInvoice] no session found for deviceId:', req.deviceId);
       }
-    } catch (e) {
-      console.error('[acceptAndAddToInvoice] fetch sessions error:', e);
+    } catch (e: any) {
+      console.error('[acceptAndAddToInvoice] fetch sessions error:', e.response?.status, e.response?.data, e.message);
     }
     console.log('[acceptAndAddToInvoice] updating local state for backendId:', req.deviceId);
+    let matchedRoom: Room | null = null;
     setRooms(prev => {
-      console.log('[acceptAndAddToInvoice] rooms count:', prev.length, 'looking for backendId:', req.deviceId);
+      console.log('[acceptAndAddToInvoice] rooms count:', prev.length, 'rooms:', prev.map(r => ({ id: r.id, bid: r.backendId, hasSess: !!r.session })));
       const updated = prev.map(r => {
-        if (r.backendId !== req.deviceId) {
-          console.log('[acceptAndAddToInvoice] room', r.id, 'backendId mismatch:', r.backendId, '!=', req.deviceId);
-          return r;
-        }
-        if (!r.session) {
-          console.log('[acceptAndAddToInvoice] room', r.id, 'found but no session');
-          return r;
-        }
-        console.log('[acceptAndAddToInvoice] room', r.id, 'found with session, adding orders');
-        return { ...r, session: { ...r.session, orders: [...r.session.orders, ...parsedOrders] } };
-      });
-      setCurrentRoom(prev => {
-        if (!prev || prev.backendId !== req.deviceId) {
-          console.log('[acceptAndAddToInvoice] currentRoom not matching, skipping update');
-          return prev;
-        }
-        const r = updated.find(x => x.backendId === req.deviceId);
-        console.log('[acceptAndAddToInvoice] updating currentRoom');
-        return r || prev;
+        if (r.backendId !== req.deviceId) return r;
+        if (!r.session) return r;
+        matchedRoom = { ...r, session: { ...r.session, orders: [...r.session.orders, ...parsedOrders] } };
+        return matchedRoom;
       });
       return updated;
     });
-    try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e) { console.error('[acceptAndAddToInvoice] accept error:', e); }
+    if (matchedRoom) {
+      console.log('[acceptAndAddToInvoice] matchedRoom found, updating currentRoom');
+      setCurrentRoom(prev => prev?.backendId === req.deviceId ? matchedRoom : prev);
+    } else {
+      console.log('[acceptAndAddToInvoice] no matched room - check if backendId matches or if room has session');
+    }
+    try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e: any) { console.error('[acceptAndAddToInvoice] accept error:', e.response?.status, e.response?.data, e.message); }
     setServiceRequests(prev => prev.filter(r => r.id !== req.id));
   }, []);
 
