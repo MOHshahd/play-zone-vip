@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://play-zone-boshe-vip.runasp.net',
+        target: 'http://play-zone-boshe-vip.runasp.net',
         secure: false
       }
     }
