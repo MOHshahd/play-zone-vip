@@ -153,6 +153,8 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     games: [],
   });
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const currentRoomRef = useRef<Room | null>(null);
+  currentRoomRef.current = currentRoom;
   const [activePage, setActivePage] = useState('dashboard');
   const [selectedSessionType, setSelectedSessionType] = useState<'timed' | 'open'>('timed');
   const [selectedMode, setSelectedMode] = useState<'single' | 'multi'>('single');
@@ -376,15 +378,22 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
       try {
         const res = await api.get('/sessions/active');
         const sessions: any[] = res.data || [];
-        setRooms(prev => prev.map(r => {
-          const s = sessions.find((as: any) => as.deviceId === r.backendId);
-          if (!s || !r.session) return r;
-          const serverOrders = (s.orderItems || []).map((o: any) => ({
-            name: o.name, price: o.price, quantity: o.quantity,
-          }));
-          if (JSON.stringify(serverOrders) === JSON.stringify(r.session.orders)) return r;
-          return { ...r, session: { ...r.session, orders: serverOrders } };
-        }));
+        setRooms(prev => {
+          let matched: Room | null = null;
+          const updated = prev.map(r => {
+            const s = sessions.find((as: any) => as.deviceId === r.backendId);
+            if (!s || !r.session) return r;
+            const serverOrders = (s.orderItems || []).map((o: any) => ({
+              name: o.name, price: o.price, quantity: o.quantity,
+            }));
+            if (JSON.stringify(serverOrders) === JSON.stringify(r.session.orders)) return r;
+            const nr = { ...r, session: { ...r.session, orders: serverOrders } };
+            if (currentRoomRef.current?.backendId === r.backendId) matched = nr;
+            return nr;
+          });
+          if (matched) setCurrentRoom(matched);
+          return updated;
+        });
       } catch {}
     };
     const iv = setInterval(pollSessions, 5000);
