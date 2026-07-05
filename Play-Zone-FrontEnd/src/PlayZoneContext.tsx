@@ -192,18 +192,22 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
       if (session) {
         const lines = req.description.split('\n').filter(l => l.includes('×'));
         for (const line of lines) {
-          const match = line.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)/);
+          const match = line.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)ج/);
           if (match) {
+            const name = match[1].trim();
+            const qty = parseInt(match[2]);
+            const total = parseFloat(match[3]);
             await api.post(`/sessions/${session.id}/add-order`, {
-              name: match[1].trim(),
-              price: parseFloat(match[3]) / parseInt(match[2]),
-              quantity: parseInt(match[2]),
+              name,
+              price: qty > 0 ? total / qty : total,
+              quantity: qty,
             });
           }
         }
       }
       await api.put(`/servicerequests/${req.id}/accept`);
       setServiceRequests(prev => prev.filter(r => r.id !== req.id));
+      loadData();
     } catch {}
   }, []);
 
