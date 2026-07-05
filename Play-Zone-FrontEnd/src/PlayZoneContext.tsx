@@ -185,41 +185,71 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const acceptAndAddToInvoice = useCallback(async (req: ServiceRequestItem) => {
+    console.log('[acceptAndAddToInvoice] req:', req.id, req.deviceId, req.deviceName);
+    console.log('[acceptAndAddToInvoice] description:', req.description);
     const lines = req.description.split('\n').filter(l => l.includes('×'));
+    console.log('[acceptAndAddToInvoice] lines with ×:', lines);
     const parsedOrders = lines.map(l => {
       const m = l.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)ج/);
+      console.log('[acceptAndAddToInvoice] regex match for line:', l, m);
       if (!m) return null;
       return { name: m[1].trim(), price: parseFloat(m[3]) / parseInt(m[2]), quantity: parseInt(m[2]) };
     }).filter(Boolean) as { name: string; price: number; quantity: number }[];
+    console.log('[acceptAndAddToInvoice] parsedOrders:', parsedOrders);
     if (parsedOrders.length === 0) {
-      try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
+      console.log('[acceptAndAddToInvoice] no parsed orders, just accepting');
+      try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e) { console.error('[acceptAndAddToInvoice] accept error:', e); }
       setServiceRequests(prev => prev.filter(r => r.id !== req.id));
       return;
     }
     try {
       const sessionRes = await api.get('/sessions/active');
       const activeSessions: any[] = sessionRes.data || [];
+      console.log('[acceptAndAddToInvoice] active sessions:', activeSessions.length);
       const session = activeSessions.find((s: any) => s.deviceId === req.deviceId);
+      console.log('[acceptAndAddToInvoice] found session:', session?.id, 'for deviceId:', req.deviceId);
       if (session) {
         for (const order of parsedOrders) {
-          await api.post(`/sessions/${session.id}/add-order`, order);
+          try {
+            const res = await api.post(`/sessions/${session.id}/add-order`, order);
+            console.log('[acceptAndAddToInvoice] add-order success:', res.status);
+          } catch (e) {
+            console.error('[acceptAndAddToInvoice] add-order error:', e);
+          }
         }
+      } else {
+        console.log('[acceptAndAddToInvoice] no session found for deviceId:', req.deviceId);
       }
-    } catch {}
+    } catch (e) {
+      console.error('[acceptAndAddToInvoice] fetch sessions error:', e);
+    }
+    console.log('[acceptAndAddToInvoice] updating local state for backendId:', req.deviceId);
     setRooms(prev => {
+      console.log('[acceptAndAddToInvoice] rooms count:', prev.length, 'looking for backendId:', req.deviceId);
       const updated = prev.map(r => {
-        if (r.backendId !== req.deviceId) return r;
-        if (!r.session) return r;
+        if (r.backendId !== req.deviceId) {
+          console.log('[acceptAndAddToInvoice] room', r.id, 'backendId mismatch:', r.backendId, '!=', req.deviceId);
+          return r;
+        }
+        if (!r.session) {
+          console.log('[acceptAndAddToInvoice] room', r.id, 'found but no session');
+          return r;
+        }
+        console.log('[acceptAndAddToInvoice] room', r.id, 'found with session, adding orders');
         return { ...r, session: { ...r.session, orders: [...r.session.orders, ...parsedOrders] } };
       });
       setCurrentRoom(prev => {
-        if (!prev || prev.backendId !== req.deviceId) return prev;
+        if (!prev || prev.backendId !== req.deviceId) {
+          console.log('[acceptAndAddToInvoice] currentRoom not matching, skipping update');
+          return prev;
+        }
         const r = updated.find(x => x.backendId === req.deviceId);
+        console.log('[acceptAndAddToInvoice] updating currentRoom');
         return r || prev;
       });
       return updated;
     });
-    try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
+    try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e) { console.error('[acceptAndAddToInvoice] accept error:', e); }
     setServiceRequests(prev => prev.filter(r => r.id !== req.id));
   }, []);
 
