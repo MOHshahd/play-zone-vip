@@ -185,30 +185,42 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const acceptAndAddToInvoice = useCallback(async (req: ServiceRequestItem) => {
+    const lines = req.description.split('\n').filter(l => l.includes('×'));
+    const parsedOrders = lines.map(l => {
+      const m = l.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)ج/);
+      if (!m) return null;
+      return { name: m[1].trim(), price: parseFloat(m[3]) / parseInt(m[2]), quantity: parseInt(m[2]) };
+    }).filter(Boolean) as { name: string; price: number; quantity: number }[];
+    if (parsedOrders.length === 0) {
+      try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
+      setServiceRequests(prev => prev.filter(r => r.id !== req.id));
+      return;
+    }
     try {
       const sessionRes = await api.get('/sessions/active');
       const activeSessions: any[] = sessionRes.data || [];
       const session = activeSessions.find((s: any) => s.deviceId === req.deviceId);
       if (session) {
-        const lines = req.description.split('\n').filter(l => l.includes('×'));
-        for (const line of lines) {
-          const match = line.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)ج/);
-          if (match) {
-            const name = match[1].trim();
-            const qty = parseInt(match[2]);
-            const total = parseFloat(match[3]);
-            await api.post(`/sessions/${session.id}/add-order`, {
-              name,
-              price: qty > 0 ? total / qty : total,
-              quantity: qty,
-            });
-          }
+        for (const order of parsedOrders) {
+          await api.post(`/sessions/${session.id}/add-order`, order);
         }
       }
-      await api.put(`/servicerequests/${req.id}/accept`);
-      setServiceRequests(prev => prev.filter(r => r.id !== req.id));
-      loadData();
     } catch {}
+    setRooms(prev => {
+      const updated = prev.map(r => {
+        if (r.backendId !== req.deviceId) return r;
+        if (!r.session) return r;
+        return { ...r, session: { ...r.session, orders: [...r.session.orders, ...parsedOrders] } };
+      });
+      setCurrentRoom(prev => {
+        if (!prev || prev.backendId !== req.deviceId) return prev;
+        const r = updated.find(x => x.backendId === req.deviceId);
+        return r || prev;
+      });
+      return updated;
+    });
+    try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
+    setServiceRequests(prev => prev.filter(r => r.id !== req.id));
   }, []);
 
   const dismissNotification = (id: string) => {
