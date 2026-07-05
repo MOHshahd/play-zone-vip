@@ -97,6 +97,7 @@ interface PlayZoneState {
   dismissNotification: (id: string) => void;
   serviceRequests: ServiceRequestItem[];
   acceptServiceRequest: (id: string) => void;
+  acceptAndAddToInvoice: (req: ServiceRequestItem) => Promise<void>;
   fetchServiceRequests: () => void;
 }
 
@@ -180,6 +181,29 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     try {
       await api.put(`/servicerequests/${id}/accept`);
       setServiceRequests(prev => prev.filter(r => r.id !== id));
+    } catch {}
+  }, []);
+
+  const acceptAndAddToInvoice = useCallback(async (req: ServiceRequestItem) => {
+    try {
+      const sessionRes = await api.get('/sessions/active');
+      const activeSessions: any[] = sessionRes.data || [];
+      const session = activeSessions.find((s: any) => s.deviceId === req.deviceId);
+      if (session) {
+        const lines = req.description.split('\n').filter(l => l.includes('×'));
+        for (const line of lines) {
+          const match = line.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)/);
+          if (match) {
+            await api.post(`/sessions/${session.id}/add-order`, {
+              name: match[1].trim(),
+              price: parseFloat(match[3]) / parseInt(match[2]),
+              quantity: parseInt(match[2]),
+            });
+          }
+        }
+      }
+      await api.put(`/servicerequests/${req.id}/accept`);
+      setServiceRequests(prev => prev.filter(r => r.id !== req.id));
     } catch {}
   }, []);
 
@@ -781,7 +805,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     addDevice, toggleMaintenance, deleteDevice, updateDevice,
     addMenuItem, updateMenuItem, removeMenuItem, saveSettings,
     loadReceipts, deleteReceipt, deleteAllReceipts, notifications, dismissNotification,
-    serviceRequests, acceptServiceRequest, fetchServiceRequests,
+    serviceRequests, acceptServiceRequest, acceptAndAddToInvoice, fetchServiceRequests,
     editingMenuItem,
   }), [
     rooms, receipts, todayRevenue, settings, currentRoom, activePage,

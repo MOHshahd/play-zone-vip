@@ -59,9 +59,6 @@ export default function RoomMenu() {
     const items = cart.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity }));
     const orderText = items.map(i => `${i.name} × ${i.quantity} = ${i.price * i.quantity}ج`).join('\n');
     try {
-      await api.post(`/sessions/add-order-by-device/${deviceId}`, { deviceId, items });
-    } catch {}
-    try {
       await api.post('/servicerequests', {
         sessionId: null,
         deviceId: deviceId || '',

@@ -9,7 +9,7 @@ const statusConfig: Record<string, { cardClass: string; icon: string; text: stri
 };
 
 export default function Dashboard() {
-  const { rooms, handleRoomClick, todayRevenue, loading, loadReceipts, serviceRequests, acceptServiceRequest } = usePlayZone();
+  const { rooms, handleRoomClick, todayRevenue, loading, loadReceipts, serviceRequests, acceptServiceRequest, acceptAndAddToInvoice } = usePlayZone();
 
   const prevCountRef = useRef(serviceRequests.length);
 
@@ -88,10 +88,10 @@ export default function Dashboard() {
                     </p>
                   </div>
                   {req.requestType === 'Order' ? (
-                    <button onClick={() => acceptServiceRequest(req.id)}
+                    <button onClick={() => acceptAndAddToInvoice(req)}
                       className="px-4 py-2 rounded-lg text-sm font-bold text-white whitespace-nowrap"
                       style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
-                      <i className="fa-solid fa-file-invoice ml-1"></i>الفاتورة
+                      <i className="fa-solid fa-file-invoice ml-1"></i>إضافة للفاتورة
                     </button>
                   ) : (
                     <button onClick={() => acceptServiceRequest(req.id)}
