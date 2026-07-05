@@ -82,16 +82,24 @@ export default function Dashboard() {
                         {req.requestType === 'CallStaff' ? 'استدعاء' : 'طلب'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300 mt-1">{req.description}</p>
+                    <p className="text-sm text-gray-300 mt-1 whitespace-pre-line">{req.description}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(req.createdAt).toLocaleTimeString('ar-EG')}
                     </p>
                   </div>
-                  <button onClick={() => acceptServiceRequest(req.id)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold text-white whitespace-nowrap"
-                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
-                    <i className="fa-solid fa-check ml-1"></i>تم
-                  </button>
+                  {req.requestType === 'Order' ? (
+                    <button onClick={() => acceptServiceRequest(req.id)}
+                      className="px-4 py-2 rounded-lg text-sm font-bold text-white whitespace-nowrap"
+                      style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
+                      <i className="fa-solid fa-file-invoice ml-1"></i>الفاتورة
+                    </button>
+                  ) : (
+                    <button onClick={() => acceptServiceRequest(req.id)}
+                      className="px-4 py-2 rounded-lg text-sm font-bold text-white whitespace-nowrap"
+                      style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                      <i className="fa-solid fa-check ml-1"></i>تم
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

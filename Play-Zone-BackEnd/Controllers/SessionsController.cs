@@ -95,6 +95,27 @@ public class SessionsController : ControllerBase
         return Ok(session);
     }
 
+    [HttpPost("add-order-by-device/{deviceId}")]
+    public async Task<ActionResult> AddOrderByDevice(string deviceId, [FromBody] CustomerOrderRequest request)
+    {
+        var session = await _db.Sessions
+            .FirstOrDefaultAsync(s => s.DeviceId == deviceId && s.Status == SessionStatus.Active);
+        if (session == null) return NotFound("No active session for this device");
+
+        foreach (var item in request.Items)
+        {
+            _db.OrderItems.Add(new OrderItem
+            {
+                SessionId = session.Id,
+                Name = item.Name,
+                Price = item.Price,
+                Quantity = item.Quantity
+            });
+        }
+        await _db.SaveChangesAsync();
+        return Ok(session);
+    }
+
     [HttpPost("{id}/add-order")]
     public async Task<ActionResult<Session>> AddOrder(string id, [FromBody] AddOrderRequest request)
     {

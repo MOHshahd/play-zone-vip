@@ -7,10 +7,10 @@ const statusText: Record<string, string> = {
 
 export default function Devices() {
   const { rooms, setShowAddDeviceModal, setShowEditDeviceModal, setEditingDevice, toggleMaintenance, deleteDevice } = usePlayZone();
-  const [qrDevice, setQrDevice] = useState<{ id: number; number: string } | null>(null);
+  const [qrDevice, setQrDevice] = useState<{ backendId: string; number: string } | null>(null);
 
   const qrUrl = qrDevice
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/room-menu?deviceId=' + qrDevice.id)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/room-menu?deviceId=' + qrDevice.backendId)}`
     : '';
 
   return (
@@ -49,7 +49,7 @@ export default function Devices() {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              <button onClick={() => setQrDevice({ id: room.id, number: room.number })}
+              <button onClick={() => setQrDevice({ backendId: room.backendId || String(room.id), number: room.number })}
                 className="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 py-2 rounded-lg text-sm font-bold text-white">
                 <i className="fa-solid fa-qrcode ml-1"></i>QR
               </button>
@@ -83,7 +83,7 @@ export default function Devices() {
             <p className="text-sm text-gray-400 mb-4">امسح QR لفتح صفحة العميل</p>
             <img src={qrUrl} alt="QR Code" className="mx-auto rounded-xl mb-4" width="250" height="250"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <p className="text-xs text-gray-500 break-all mb-4">{window.location.origin}/room-menu?deviceId={qrDevice.id}</p>
+            <p className="text-xs text-gray-500 break-all mb-4">{window.location.origin}/room-menu?deviceId={qrDevice.backendId}</p>
             <button onClick={() => setQrDevice(null)}
               className="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm font-bold">
               إغلاق
