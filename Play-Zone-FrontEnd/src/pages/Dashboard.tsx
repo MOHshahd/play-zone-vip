@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePlayZone, Room } from '../PlayZoneContext';
+import { playAlert } from '../sound';
 
 const statusConfig: Record<string, { cardClass: string; icon: string; text: string }> = {
   available: { cardClass: 'card-available', icon: 'fa-solid fa-check-circle', text: 'متاح' },
@@ -10,10 +11,19 @@ const statusConfig: Record<string, { cardClass: string; icon: string; text: stri
 export default function Dashboard() {
   const { rooms, handleRoomClick, todayRevenue, loading, loadReceipts, serviceRequests, acceptServiceRequest } = usePlayZone();
 
+  const prevCountRef = useRef(serviceRequests.length);
+
   useEffect(() => {
     const now = new Date();
     loadReceipts(now.getFullYear(), now.getMonth() + 1, now.getDate());
   }, []);
+
+  useEffect(() => {
+    if (serviceRequests.length > prevCountRef.current) {
+      playAlert();
+    }
+    prevCountRef.current = serviceRequests.length;
+  }, [serviceRequests.length]);
 
   const available = rooms.filter(r => r.status === 'available').length;
   const busy = rooms.filter(r => r.status === 'busy').length;

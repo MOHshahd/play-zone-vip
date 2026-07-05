@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { usePlayZone } from '../PlayZoneContext';
 
 const statusText: Record<string, string> = {
@@ -6,6 +7,11 @@ const statusText: Record<string, string> = {
 
 export default function Devices() {
   const { rooms, setShowAddDeviceModal, setShowEditDeviceModal, setEditingDevice, toggleMaintenance, deleteDevice } = usePlayZone();
+  const [qrDevice, setQrDevice] = useState<{ id: number; number: string } | null>(null);
+
+  const qrUrl = qrDevice
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/room-menu?deviceId=' + qrDevice.id)}`
+    : '';
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -42,7 +48,11 @@ export default function Devices() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
+              <button onClick={() => setQrDevice({ id: room.id, number: room.number })}
+                className="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 py-2 rounded-lg text-sm font-bold text-white">
+                <i className="fa-solid fa-qrcode ml-1"></i>QR
+              </button>
               <button onClick={() => toggleMaintenance(room.id)}
                 disabled={room.status === 'busy'}
                 className="bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 py-2 rounded-lg text-sm font-bold disabled:opacity-50 text-white">
@@ -62,6 +72,25 @@ export default function Devices() {
           </div>
         ))}
       </div>
+
+      {qrDevice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setQrDevice(null)}>
+          <div className="bg-gray-900 rounded-2xl p-6 text-center mx-4 max-w-sm"
+            onClick={e => e.stopPropagation()}
+            style={{ border: '1px solid rgba(139,92,246,0.3)' }}>
+            <h3 className="text-xl font-bold mb-2">جهاز {qrDevice.number}</h3>
+            <p className="text-sm text-gray-400 mb-4">امسح QR لفتح صفحة العميل</p>
+            <img src={qrUrl} alt="QR Code" className="mx-auto rounded-xl mb-4" width="250" height="250"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <p className="text-xs text-gray-500 break-all mb-4">{window.location.origin}/room-menu?deviceId={qrDevice.id}</p>
+            <button onClick={() => setQrDevice(null)}
+              className="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
