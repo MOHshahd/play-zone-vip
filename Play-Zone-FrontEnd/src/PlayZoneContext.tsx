@@ -370,6 +370,27 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(iv);
   }, [fetchServiceRequests]);
 
+  // Poll active sessions to sync customer orders
+  useEffect(() => {
+    const pollSessions = async () => {
+      try {
+        const res = await api.get('/sessions/active');
+        const sessions: any[] = res.data || [];
+        setRooms(prev => prev.map(r => {
+          const s = sessions.find((as: any) => as.deviceId === r.backendId);
+          if (!s || !r.session) return r;
+          const serverOrders = (s.orderItems || []).map((o: any) => ({
+            name: o.name, price: o.price, quantity: o.quantity,
+          }));
+          if (JSON.stringify(serverOrders) === JSON.stringify(r.session.orders)) return r;
+          return { ...r, session: { ...r.session, orders: serverOrders } };
+        }));
+      } catch {}
+    };
+    const iv = setInterval(pollSessions, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
   const loadReceipts = useCallback(async (year: number, month: number, day?: number) => {
     try {
       const params: Record<string, any> = { year, month };

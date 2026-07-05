@@ -43,8 +43,17 @@ export default function InvoiceModal() {
           <tr><td>${b.duration} دقيقة × ${b.mode === 'single' ? 'Single' : 'Multi'}</td><td>${b.cost} ج</td></tr>
         `).join('')}
         <tr><td>تكلفة اللعب</td><td>${playCost} ج</td></tr>
-        <tr><td>الأوردرات</td><td>${inv.ordersCost} ج</td></tr>
-        <tr><td>طريقة الدفع</td><td>${paymentMethods.find(p => p.key === selectedPayment)?.label || selectedPayment}</td></tr>
+      </table>
+      ${(inv.orderItems || []).length > 0 ? `
+        <div style="font-weight:bold;margin-top:8px;">الأوردرات</div>
+        <table>
+          ${inv.orderItems.map((o: any) => `
+            <tr><td>${o.name} × ${o.quantity}</td><td>${o.total} ج</td></tr>
+          `).join('')}
+          <tr style="font-weight:bold"><td>الإجمالي</td><td>${inv.ordersCost} ج</td></tr>
+        </table>
+      ` : ''}
+      <table><tr><td>طريقة الدفع</td><td>${paymentMethods.find(p => p.key === selectedPayment)?.label || selectedPayment}</td></tr>
       </table>
       <hr>
       <div class="total">الإجمالي: ${totalCost} ج</div>
@@ -96,11 +105,26 @@ export default function InvoiceModal() {
                 <span className="text-gray-400">تكلفة اللعب</span>
                 <span className="font-bold">{playCost} ج</span>
               </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">الأوردرات</span>
-                <span className="font-bold">{inv.ordersCost} ج</span>
+            </div>
+            {inv.orderItems && inv.orderItems.length > 0 && (
+              <div className="border-t border-gray-700 pt-3">
+                <label className="text-sm font-medium mb-2 block">الأوردرات</label>
+                <div className="space-y-1">
+                  {inv.orderItems.map((o: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">{o.name} × {o.quantity}</span>
+                      <span className="font-bold">{o.total} ج</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-700">
+                  <span className="text-sm text-gray-400">إجمالي الأوردرات</span>
+                  <span className="font-bold">{inv.ordersCost} ج</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-xl font-bold text-purple-400 pt-2 border-t border-gray-700">
+            )}
+            <div className="border-t border-gray-700 pt-3">
+              <div className="flex items-center justify-between text-xl font-bold text-purple-400">
                 <span>الإجمالي</span>
                 <span>{totalCost} ج</span>
               </div>

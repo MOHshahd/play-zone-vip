@@ -12,6 +12,20 @@ export default function Dashboard() {
   const { rooms, handleRoomClick, todayRevenue, loading, loadReceipts, serviceRequests, acceptServiceRequest, acceptAndAddToInvoice } = usePlayZone();
 
   const prevCountRef = useRef(serviceRequests.length);
+  const prevOrderCountsRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    rooms.forEach(room => {
+      if (!room.session) return;
+      const key = room.backendId || String(room.id);
+      const currentCount = room.session.orders.length;
+      const prevCount = prevOrderCountsRef.current[key] || 0;
+      if (currentCount > prevCount) {
+        playAlert();
+      }
+      prevOrderCountsRef.current[key] = currentCount;
+    });
+  }, [rooms]);
 
   useEffect(() => {
     const now = new Date();
@@ -164,6 +178,13 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
+                      {room.session.orders.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-center gap-1 text-yellow-400">
+                          <i className="fa-solid fa-shopping-bag text-xs"></i>
+                          <span className="text-sm font-bold">{room.session.orders.length}</span>
+                          <span className="text-xs text-gray-400">أوردرات</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
