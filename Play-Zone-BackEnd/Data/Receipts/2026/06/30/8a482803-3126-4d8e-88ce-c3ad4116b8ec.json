@@ -1,0 +1,27 @@
+{
+  "Id": "8a482803-3126-4d8e-88ce-c3ad4116b8ec",
+  "SessionId": "",
+  "DeviceName": "PS4 - \u063A\u0631\u0641\u0629 2",
+  "DeviceType": 0,
+  "StartTime": "2026-06-30T12:20:38.098+03:00",
+  "EndTime": "2026-06-30T12:25:46.776+03:00",
+  "TotalDuration": "00:05:05",
+  "IsOpenTime": false,
+  "ModeEntries": [
+    {
+      "Mode": "Multi",
+      "Duration": "00:04:00",
+      "Charge": 3
+    },
+    {
+      "Mode": "Single",
+      "Duration": "00:01:00",
+      "Charge": 1
+    }
+  ],
+  "OrderItems": [],
+  "TimeCharge": 4,
+  "OrdersTotal": 0,
+  "GrandTotal": 4,
+  "CreatedAt": "2026-06-30T12:25:59.5238785+03:00"
+}

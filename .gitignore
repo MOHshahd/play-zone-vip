@@ -1,0 +1,23 @@
+# Backend
+Play-Zone-BackEnd/bin/
+Play-Zone-BackEnd/obj/
+Play-Zone-BackEnd/publish/
+Play-Zone-BackEnd/.vs/
+Play-Zone-BackEnd/*.user
+
+# Frontend
+Play-Zone-FrontEnd/node_modules/
+Play-Zone-FrontEnd/dist/
+Play-Zone-FrontEnd/.vercel/
+Play-Zone-FrontEnd/.env
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db

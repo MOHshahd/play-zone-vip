@@ -1,0 +1,34 @@
+{
+  "Id": "36df74c0-0a29-4856-a5ac-1ce32cd2aeb7",
+  "SessionId": "",
+  "DeviceName": "PS5 - \u063A\u0631\u0641\u0629 1",
+  "DeviceType": 1,
+  "StartTime": "2026-06-30T12:03:54.597+03:00",
+  "EndTime": "2026-06-30T12:06:04.526+03:00",
+  "TotalDuration": "00:02:02",
+  "IsOpenTime": false,
+  "ModeEntries": [
+    {
+      "Mode": "Single",
+      "Duration": "00:01:00",
+      "Charge": 1
+    },
+    {
+      "Mode": "Multi",
+      "Duration": "00:01:00",
+      "Charge": 1
+    }
+  ],
+  "OrderItems": [
+    {
+      "Name": "\u0634\u064A\u0634\u0629",
+      "Price": 45,
+      "Quantity": 1,
+      "Total": 45
+    }
+  ],
+  "TimeCharge": 2,
+  "OrdersTotal": 45,
+  "GrandTotal": 47,
+  "CreatedAt": "2026-06-30T12:06:27.0702387+03:00"
+}
