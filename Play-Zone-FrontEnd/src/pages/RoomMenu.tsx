@@ -56,6 +56,24 @@ export default function RoomMenu() {
 
   const sendOrder = async () => {
     if (cart.length === 0) return;
+    try {
+      const sessionsRes = await api.get('/sessions/active');
+      const sessions: any[] = sessionsRes.data || [];
+      const session = sessions.find((s: any) => s.deviceId === deviceId);
+      if (session) {
+        for (const c of cart) {
+          await api.post(`/sessions/${session.id}/add-order`, {
+            name: c.item.name,
+            price: c.item.price,
+            quantity: c.quantity,
+          });
+        }
+        setOrderSent(true);
+        setCart([]);
+        return;
+      }
+    } catch {}
+    // fallback: create ServiceRequest
     const items = cart.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity }));
     const orderText = items.map(i => `${i.name} × ${i.quantity} = ${i.price * i.quantity}ج`).join('\n');
     try {

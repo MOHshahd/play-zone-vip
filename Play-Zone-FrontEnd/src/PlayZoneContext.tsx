@@ -185,48 +185,29 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const acceptAndAddToInvoice = useCallback(async (req: ServiceRequestItem) => {
-    console.log('[acceptAndAddToInvoice] req:', req.id, req.deviceId, req.deviceName);
-    console.log('[acceptAndAddToInvoice] description:', req.description);
     const lines = req.description.split('\n').filter(l => l.includes('×'));
-    console.log('[acceptAndAddToInvoice] lines with ×:', lines);
     const parsedOrders = lines.map(l => {
       const m = l.match(/(.+)\s*×\s*(\d+)\s*=\s*(\d+)ج/);
-      console.log('[acceptAndAddToInvoice] regex match for line:', l, m);
       if (!m) return null;
       return { name: m[1].trim(), price: parseFloat(m[3]) / parseInt(m[2]), quantity: parseInt(m[2]) };
     }).filter(Boolean) as { name: string; price: number; quantity: number }[];
-    console.log('[acceptAndAddToInvoice] parsedOrders:', parsedOrders);
     if (parsedOrders.length === 0) {
-      console.log('[acceptAndAddToInvoice] no parsed orders, just accepting');
-      try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e) { console.error('[acceptAndAddToInvoice] accept error:', e); }
+      try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
       setServiceRequests(prev => prev.filter(r => r.id !== req.id));
       return;
     }
     try {
       const sessionRes = await api.get('/sessions/active');
       const activeSessions: any[] = sessionRes.data || [];
-      console.log('[acceptAndAddToInvoice] active sessions:', activeSessions.length, 'data:', activeSessions);
       const session = activeSessions.find((s: any) => s.deviceId === req.deviceId);
-      console.log('[acceptAndAddToInvoice] found session:', session?.id, 'for deviceId:', req.deviceId);
       if (session) {
         for (const order of parsedOrders) {
-          try {
-            const res = await api.post(`/sessions/${session.id}/add-order`, order);
-            console.log('[acceptAndAddToInvoice] add-order success:', res.status);
-          } catch (e: any) {
-            console.error('[acceptAndAddToInvoice] add-order error:', e.response?.status, e.response?.data, e.message);
-          }
+          try { await api.post(`/sessions/${session.id}/add-order`, order); } catch {}
         }
-      } else {
-        console.log('[acceptAndAddToInvoice] no session found for deviceId:', req.deviceId);
       }
-    } catch (e: any) {
-      console.error('[acceptAndAddToInvoice] fetch sessions error:', e.response?.status, e.response?.data, e.message);
-    }
-    console.log('[acceptAndAddToInvoice] updating local state for backendId:', req.deviceId);
+    } catch {}
     let matchedRoom: Room | null = null;
     setRooms(prev => {
-      console.log('[acceptAndAddToInvoice] rooms count:', prev.length, 'rooms:', prev.map(r => ({ id: r.id, bid: r.backendId, hasSess: !!r.session })));
       const updated = prev.map(r => {
         if (r.backendId !== req.deviceId) return r;
         if (!r.session) return r;
@@ -235,13 +216,8 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
       });
       return updated;
     });
-    if (matchedRoom) {
-      console.log('[acceptAndAddToInvoice] matchedRoom found, updating currentRoom');
-      setCurrentRoom(prev => prev?.backendId === req.deviceId ? matchedRoom : prev);
-    } else {
-      console.log('[acceptAndAddToInvoice] no matched room - check if backendId matches or if room has session');
-    }
-    try { await api.put(`/servicerequests/${req.id}/accept`); } catch (e: any) { console.error('[acceptAndAddToInvoice] accept error:', e.response?.status, e.response?.data, e.message); }
+    if (matchedRoom) setCurrentRoom(prev => prev?.backendId === req.deviceId ? matchedRoom : prev);
+    try { await api.put(`/servicerequests/${req.id}/accept`); } catch {}
     setServiceRequests(prev => prev.filter(r => r.id !== req.id));
   }, []);
 
